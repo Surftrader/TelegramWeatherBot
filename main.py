@@ -1,84 +1,46 @@
-import requests
-import json
-import time
+from weather_service import WeatherService
+from telegram_bot import TelegramBot
 
 from dotenv import load_dotenv
-import os
-
-import const
-
-
-def answer_user_bot(data):
-    data = {
-        'chat_id': os.getenv('MY_ID'),
-        'text': data
-    }
-    url = const.TELEGRAM_URL.format(
-        token=os.getenv('TELEGRAM_TOKEN'), 
-        method=const.SEND_METHOD
-        )
-    requests.post(url, data=data)
-
-def parse_weathed_data(data):
-    for elem in data['weather']:
-        weather_state = elem['main']
-    temp = round(data['main']['temp'] - 273.15, 2)
-    city = data['name']
-    msg = f'The weather in {city}: Temp is {temp}, State is {weather_state}.' 
-    return msg
-
-
-def get_weather(location):
-    url = const.WEATHER_URL.format(
-        city=location,
-        token=os.getenv('WEATHER_TOKEN'))
-    response = requests.get(url)
-    if response.status_code != 200:
-        return 'city not found'
-    data = json.loads(response.content) 
-    return parse_weathed_data(data)
-
-
-def get_message(data):
-    return data['message']['text']
-
-
-def save_update_id(update):
-    with open(const.UPDATE_ID_PATH , 'w') as file:
-        file.write(str(update['update_id']))
-        const.UPDATE_ID = update['update_id']
-    return True
-
+import time
 
 def main():
+    
+    load_dotenv()
+    telegram_bot = TelegramBot()
+    weather_service = WeatherService()
+    last_update_id = 0
+
     while True:
-        url = const.TELEGRAM_URL.format(
-            token=os.getenv('TELEGRAM_TOKEN'), 
-            method=const.UPDATES_METHOD)
-        content = requests.get(url).text
-        data = json.loads(content)
+        data = telegram_bot.update_data(last_update_id)
         
-        result = data['result'][::-1]
-        needed_part = None
+        updates = data.get('result', [])
         
-        for elem in result:
-            if elem['message']['chat']['id'] == int(os.getenv('MY_ID')):
-                needed_part = elem
-                break
+        for elem in updates:
+            last_update_id = elem['update_id']
+            
+            # Get text from message
+            message = elem.get('message')
+            if not message or 'text' not in message:
+                continue
 
-        if const.UPDATE_ID != needed_part['update_id']:
-            message = get_message(needed_part)
-            weather = get_weather(message)
-            answer_user_bot(weather)
-            save_update_id(needed_part)
-
-        # pause 5 seconds
-        time.sleep(5) 
-
-
+            chat_id = message['chat']['id']
+            user_text = message['text']
+            
+            # Logic to process user message
+            if user_text == "/start":
+                answer = "Enter city:"
+            else:
+                # User asked for weather
+                answer = weather_service.get_weather(user_text)
+                
+            # Send answer to user
+            telegram_bot.send_message(chat_id, answer)
+            
+        time.sleep(5)
+        
 if __name__ == '__main__':
     try:
-        load_dotenv()
-        main()
+        main()    
     except KeyboardInterrupt:
         print('\nProgram stopted!')

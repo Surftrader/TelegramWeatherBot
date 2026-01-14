@@ -1,0 +1,36 @@
+import requests
+import os
+
+import const
+
+class TelegramBot:
+    
+    def __init__(self):
+        self.token = os.getenv('TELEGRAM_TOKEN')
+        self.base_url = f"{const.TELEGRAM_URL}{self.token}/"
+    
+    
+    def update_data(self, last_update_id):
+        params = {'offset': last_update_id + 1, 'timeout': 10}
+        try:
+            content = requests.get(f"{self.base_url}{const.UPDATES_METHOD}", params=params)
+            content.raise_for_status()
+            data = content.json()
+            
+            if not data.get('ok'):
+                print(f"Telegram API Error: {data.get('description')}")
+                return {'result': []}
+            
+            return data
+        except Exception as e:
+            print(f"Network error: {e}")
+            return {'result': []}
+ 
+ 
+    def send_message(self, user_id, text):
+        data = {
+            'chat_id': user_id,
+            'text': text
+        }
+        requests.post(f"{self.base_url}{const.SEND_METHOD}", data=data)
+
