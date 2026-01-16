@@ -6,12 +6,29 @@ from weather import Weather
 
 
 class WeatherService:
+    """
+    A service for working with the weather forecast API (OpenWeather).
+    """
     
     def __init__(self):
+        """
+        Initializes the API URL and loads WEATHER_TOKEN from the environment.
+        """
         self.token = os.getenv('WEATHER_TOKEN')
         self.base_url = const.WEATHER_URL
 
     def get_weather(self, city):
+        """
+        Gets the current weather for the specified city.
+        
+        Forms a request, handles errors (for example, if the city is not found), and returns a formatted string.
+
+        Args:
+            city (str): City name in English.
+
+        Returns:
+            str: The finished forecast text or error message.
+        """
         params = {
             'q': city,
             'appid': self.token,

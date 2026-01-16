@@ -5,6 +5,13 @@ from dotenv import load_dotenv
 import time
 
 def main():
+    """
+    The main entry point to the application.
+
+    Initiates Telegram's infinite polling loop,
+    
+    coordinates the bot and weather service.
+    """
     
     load_dotenv()
     telegram_bot = TelegramBot()
