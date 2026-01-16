@@ -11,7 +11,7 @@ class TelegramBot:
     
     
     def update_data(self, last_update_id):
-        params = {'offset': last_update_id + 1, 'timeout': 10}
+        params = {'offset': last_update_id + 1, 'timeout': 30}
         try:
             content = requests.get(f"{self.base_url}{const.UPDATES_METHOD}", params=params)
             content.raise_for_status()
@@ -32,5 +32,5 @@ class TelegramBot:
             'chat_id': user_id,
             'text': text
         }
-        requests.post(f"{self.base_url}{const.SEND_METHOD}", data=data)
+        requests.post(f"{self.base_url}{const.SEND_METHOD}", data=data, timeout=10)
 
